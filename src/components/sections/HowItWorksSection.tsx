@@ -1,0 +1,260 @@
+'use client';
+
+import { useEffect, useState, useRef } from 'react';
+import { motion, useAnimation, useInView } from 'framer-motion';
+import { Upload, Cpu, Settings, Download } from 'lucide-react';
+
+const steps = [
+  {
+    number: '1',
+    icon: Upload,
+    title: 'Upload Your Resume',
+    description: 'Simply upload your existing resume in any format (PDF, DOCX, or TXT).',
+    gradient: 'from-blue-500 to-violet-500',
+    iconColor: 'text-blue-500',
+    bgColor: 'bg-blue-500/5',
+    borderColor: 'group-hover:border-blue-500/20'
+  },
+  {
+    number: '2',
+    icon: Cpu,
+    title: 'AI Analyzes & Suggests Improvements',
+    description: 'Our AI engine analyzes your resume and provides detailed improvement suggestions.',
+    gradient: 'from-violet-500 to-purple-500',
+    iconColor: 'text-violet-500',
+    bgColor: 'bg-violet-500/5',
+    borderColor: 'group-hover:border-violet-500/20'
+  },
+  {
+    number: '3',
+    icon: Settings,
+    title: 'Customize & Optimize',
+    description: 'Fine-tune your resume with AI-powered suggestions and ATS optimization.',
+    gradient: 'from-purple-500 to-fuchsia-500',
+    iconColor: 'text-purple-500',
+    bgColor: 'bg-purple-500/5',
+    borderColor: 'group-hover:border-purple-500/20'
+  },
+  {
+    number: '4',
+    icon: Download,
+    title: 'Download & Apply',
+    description: 'Download your optimized resume and start applying with confidence.',
+    gradient: 'from-fuchsia-500 to-pink-500',
+    iconColor: 'text-fuchsia-500',
+    bgColor: 'bg-fuchsia-500/5',
+    borderColor: 'group-hover:border-fuchsia-500/20'
+  }
+];
+
+const StepCard = ({ step, index }: { step: typeof steps[0], index: number }) => {
+  const cardRef = useRef(null);
+  const isInView = useInView(cardRef, { 
+    once: false,
+    amount: 0.3
+  });
+
+  const cardVariants = {
+    hidden: { 
+      opacity: 0,
+      x: -50,
+      y: 20
+    },
+    visible: {
+      opacity: 1,
+      x: 0,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15,
+        duration: 0.7,
+        delay: index * 0.2
+      }
+    }
+  };
+
+  const iconVariants = {
+    hidden: { 
+      scale: 0.5,
+      opacity: 0
+    },
+    visible: {
+      scale: 1,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+        duration: 0.5,
+        delay: index * 0.2 + 0.2
+      }
+    }
+  };
+
+  const contentVariants = {
+    hidden: { 
+      opacity: 0,
+      x: -20
+    },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        duration: 0.5,
+        delay: index * 0.2 + 0.3
+      }
+    }
+  };
+
+  return (
+    <motion.div
+      ref={cardRef}
+      variants={cardVariants}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+    >
+      <div className={`group relative rounded-2xl border border-white/10 ${step.bgColor} backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] p-6`}>
+        {/* Content Container */}
+        <div className="flex items-start gap-6">
+          {/* Step Number with Background */}
+          <motion.div
+            variants={iconVariants}
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-900/50 ring-1 ring-white/10 transition-all duration-500 group-hover:ring-white/20`}
+          >
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              className={`text-2xl font-bold bg-gradient-to-r ${step.gradient} bg-clip-text text-transparent`}
+            >
+              {step.number}
+            </motion.div>
+          </motion.div>
+
+          {/* Text Content */}
+          <div>
+            <motion.div
+              variants={contentVariants}
+              className="flex items-center gap-2"
+            >
+              <step.icon className={`h-5 w-5 ${step.iconColor} transition-colors duration-500`} />
+              <h3 className="text-xl font-semibold text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/70">
+                {step.title}
+              </h3>
+            </motion.div>
+            <motion.div
+              variants={contentVariants}
+            >
+              <p className="text-base text-white/60 group-hover:text-white/80 transition-colors duration-500">
+                {step.description}
+              </p>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Connecting Line */}
+        {index < steps.length - 1 && (
+          <motion.div
+            variants={{
+              hidden: { height: 0 },
+              visible: { 
+                height: "100%",
+                transition: {
+                  duration: 0.5,
+                  delay: index * 0.2 + 0.5
+                }
+              }
+            }}
+            className="absolute left-[2.2rem] top-24 bottom-[-2rem] w-[2px]"
+          >
+            <div className="h-full w-full bg-gradient-to-b from-white/20 to-transparent" />
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+const HowItWorksSection = () => {
+  const sectionRef = useRef(null);
+  const isInView = useInView(sectionRef, { 
+    margin: "-100px",
+    amount: 0.3
+  });
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.8,
+        staggerChildren: 0.2,
+        when: "beforeChildren"
+      }
+    }
+  };
+
+  const headerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { 
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+        duration: 0.6
+      }
+    }
+  };
+
+  return (
+    <section ref={sectionRef} className="relative py-12 overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#4f46e5,transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,#7c3aed,transparent_50%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+      </div>
+
+      <div className="container mx-auto px-6 lg:px-8">
+        {/* Section Header */}
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+          className="max-w-2xl mx-auto text-center mb-16"
+        >
+          <motion.h2 
+            variants={headerVariants}
+            className="text-4xl font-bold tracking-tight text-white mb-4"
+          >
+            How It{' '}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-violet-500 to-purple-500">
+              Works
+            </span>
+          </motion.h2>
+          <motion.p 
+            variants={headerVariants}
+            className="text-lg text-white/60"
+          >
+            Four simple steps to transform your resume and boost your job search success
+          </motion.p>
+        </motion.div>
+
+        {/* Steps Grid */}
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+          className="max-w-3xl mx-auto space-y-8"
+        >
+          {steps.map((step, index) => (
+            <StepCard key={index} step={step} index={index} />
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+export default HowItWorksSection; 

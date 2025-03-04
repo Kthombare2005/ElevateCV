@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ElevateCV - Transform Your Resume with AI",
-  description: "Create a stunning resume portfolio with AI-powered analysis, ATS optimization, and personalized feedback. Stand out from the crowd and land your dream job.",
+  title: "ElevateCV - AI-Powered Resume Builder",
+  description: "Transform your resume with AI-powered optimization and get more interviews.",
 };
 
 export default function RootLayout({
@@ -17,7 +18,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} min-h-screen bg-gradient-to-b from-white to-purple-50/50 antialiased`}>
-        {children}
+        <main>{children}</main>
+        <Footer />
       </body>
     </html>
   );

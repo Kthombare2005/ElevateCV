@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useInView, useAnimationFrame, useMotionValue, useTransform } from 'framer-motion';
 import { Star, Quote } from 'lucide-react';
-import { Marquee } from '../ui/Marquee';
+import { useState, useEffect } from 'react';
 
 const testimonials = [
   {
@@ -44,9 +44,18 @@ const testimonials = [
   }
 ];
 
-const TestimonialCard = ({ testimonial }: { testimonial: typeof testimonials[0] }) => {
+const TestimonialCard = ({ testimonial, index }: { testimonial: typeof testimonials[0]; index: number }) => {
   return (
-    <div className="group relative w-[450px] mx-4">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ 
+        duration: 0.5,
+        delay: 0.6 + (index * 0.1),
+        ease: "easeOut"
+      }}
+      className="group relative w-[450px] shrink-0"
+    >
       <div className="relative rounded-xl bg-slate-900/80 border border-slate-800 p-6 backdrop-blur-sm">
         {/* Quote Icon */}
         <div className="mb-4">
@@ -95,6 +104,59 @@ const TestimonialCard = ({ testimonial }: { testimonial: typeof testimonials[0] 
           ))}
         </div>
       </div>
+    </motion.div>
+  );
+};
+
+const InfiniteCarousel = ({ items }: { items: typeof testimonials }) => {
+  const baseVelocity = -2;
+  const baseX = useMotionValue(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hovering, setHovering] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 400); // Start after header animation
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useAnimationFrame((time, delta) => {
+    if (hovering || !isVisible) return;
+    
+    let moveBy = baseVelocity * (delta / 16);
+    
+    if (scrollRef.current) {
+      const containerWidth = scrollRef.current.scrollWidth / 2;
+      baseX.set((baseX.get() + moveBy) % containerWidth);
+    }
+  });
+
+  const x = useTransform(baseX, (value) => {
+    return `${value}px`;
+  });
+
+  return (
+    <div 
+      className="relative overflow-hidden"
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
+      <motion.div
+        ref={scrollRef}
+        style={{ x }}
+        className="flex gap-6"
+      >
+        {[...items, ...items].map((testimonial, idx) => (
+          <TestimonialCard
+            key={`${idx}-${testimonial.name}`}
+            testimonial={testimonial}
+            index={idx % items.length}
+          />
+        ))}
+      </motion.div>
     </div>
   );
 };
@@ -102,52 +164,12 @@ const TestimonialCard = ({ testimonial }: { testimonial: typeof testimonials[0] 
 const TestimonialsSection = () => {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { 
-    margin: "50% 0px -10% 0px",
+    margin: "0px",
     amount: 0.2
   });
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.5,
-        staggerChildren: 0.1,
-        when: "beforeChildren"
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { 
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-        duration: 0.5
-      }
-    }
-  };
-
-  const marqueeVariants = {
-    hidden: { opacity: 0, scale: 0.99 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { 
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-        duration: 0.5
-      }
-    }
-  };
-
   return (
-    <section ref={sectionRef} className="relative py-32 overflow-hidden bg-slate-950">
+    <section ref={sectionRef} className="relative py-20 overflow-hidden bg-slate-950">
       {/* Background Effects */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         {/* Extended gradients for smoother transitions */}
@@ -165,70 +187,42 @@ const TestimonialsSection = () => {
         />
       </div>
 
-      <div className="container mx-auto px-6">
-        {/* Section Header */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
-          className="max-w-2xl mx-auto text-center mb-24"
+      {/* Section Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-2xl mx-auto text-center mb-16 px-4"
+      >
+        <motion.h2 
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.5 }}
+          className="text-4xl font-bold tracking-tight text-white mb-6"
         >
-          <motion.h2 
-            variants={itemVariants}
-            className="text-4xl font-bold tracking-tight text-white mb-6"
-          >
-            Trusted by{' '}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-violet-500">
-              Professionals
-            </span>
-          </motion.h2>
-          <motion.p 
-            variants={itemVariants}
-            className="text-lg text-white/70"
-          >
-            See what our users say about their experience with ElevateCV
-          </motion.p>
-        </motion.div>
+          Trusted by{' '}
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-violet-500">
+            Professionals
+          </span>
+        </motion.h2>
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="text-lg text-white/70"
+        >
+          See what our users say about their experience with ElevateCV
+        </motion.p>
+      </motion.div>
 
-        {/* Testimonials Marquee */}
+      {/* Infinite Carousel */}
+      <div className="relative w-[100vw] left-[calc(-50vw+50%)] right-[calc(-50vw+50%)]">
         <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
-          className="space-y-16"
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
         >
-          {/* First row - right to left */}
-          <motion.div 
-            variants={marqueeVariants}
-            className="relative w-full"
-          >
-            <Marquee 
-              className="py-4" 
-              pauseOnHover 
-              reverse 
-              speed={30}
-            >
-              {testimonials.map((testimonial, index) => (
-                <TestimonialCard key={`top-${index}`} testimonial={testimonial} />
-              ))}
-            </Marquee>
-          </motion.div>
-
-          {/* Second row - left to right */}
-          <motion.div 
-            variants={marqueeVariants}
-            className="relative w-full"
-          >
-            <Marquee 
-              className="py-4" 
-              pauseOnHover 
-              speed={35}
-            >
-              {[...testimonials].reverse().map((testimonial, index) => (
-                <TestimonialCard key={`bottom-${index}`} testimonial={testimonial} />
-              ))}
-            </Marquee>
-          </motion.div>
+          <InfiniteCarousel items={testimonials} />
         </motion.div>
       </div>
     </section>

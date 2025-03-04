@@ -67,7 +67,7 @@ export const Marquee = ({
           duration: 100 / speed,
           repeat: Infinity,
           ease: 'linear',
-          ...(pauseOnHover && { pauseValues: { x: ['0%'] } })
+          ...(pauseOnHover && { pauseValues: { x: ['0%'] } as Record<string, string[]> })
         }}
       >
         {children}

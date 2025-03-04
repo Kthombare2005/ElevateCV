@@ -44,7 +44,7 @@ const testimonials = [
   }
 ];
 
-const TestimonialCard = ({ testimonial, index }: { testimonial: typeof testimonials[0], index: number }) => {
+const TestimonialCard = ({ testimonial }: { testimonial: typeof testimonials[0] }) => {
   return (
     <div className="group relative w-[450px] mx-4">
       <div className="relative rounded-xl bg-slate-900/80 border border-slate-800 p-6 backdrop-blur-sm">
@@ -56,7 +56,7 @@ const TestimonialCard = ({ testimonial, index }: { testimonial: typeof testimoni
         {/* Testimonial Text */}
         <blockquote className="mb-4">
           <p className="text-base text-slate-300 leading-relaxed">
-            "{testimonial.quote}"
+            &ldquo;{testimonial.quote}&rdquo;
           </p>
         </blockquote>
 
@@ -209,7 +209,7 @@ const TestimonialsSection = () => {
               speed={30}
             >
               {testimonials.map((testimonial, index) => (
-                <TestimonialCard key={`top-${index}`} testimonial={testimonial} index={index} />
+                <TestimonialCard key={`top-${index}`} testimonial={testimonial} />
               ))}
             </Marquee>
           </motion.div>
@@ -225,7 +225,7 @@ const TestimonialsSection = () => {
               speed={35}
             >
               {[...testimonials].reverse().map((testimonial, index) => (
-                <TestimonialCard key={`bottom-${index}`} testimonial={testimonial} index={index} />
+                <TestimonialCard key={`bottom-${index}`} testimonial={testimonial} />
               ))}
             </Marquee>
           </motion.div>

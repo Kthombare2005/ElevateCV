@@ -1,7 +1,7 @@
 'use client';
 
-import { Brain, CheckCircle2, BarChart2, RefreshCw, Zap, Target } from 'lucide-react';
-import { useEffect, useState, useRef } from 'react';
+import { Brain, CheckCircle2, RefreshCw, Zap, Target } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BoxReveal } from '../animations/BoxReveal';
 import { useInView } from 'react-intersection-observer';

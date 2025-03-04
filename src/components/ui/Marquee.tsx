@@ -1,7 +1,9 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
-import { ComponentPropsWithoutRef, useEffect, useState, useRef } from "react";
+import { ComponentPropsWithoutRef } from "react";
 
 interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
   /**
@@ -23,80 +25,53 @@ interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
    */
   children: React.ReactNode;
   /**
-   * Whether to animate vertically instead of horizontally
-   * @default false
-   */
-  vertical?: boolean;
-  /**
    * Speed of the animation in seconds
-   * @default 40
+   * @default 20
    */
   speed?: number;
 }
 
-export function Marquee({
-  className,
+export const Marquee = ({
+  children,
+  className = '',
   reverse = false,
   pauseOnHover = false,
-  children,
-  vertical = false,
-  speed = 40,
-  ...props
-}: MarqueeProps) {
-  const [isClient, setIsClient] = useState(false);
-  const [shouldAnimate, setShouldAnimate] = useState(false);
+  speed = 20,
+}: MarqueeProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setIsClient(true);
-    // Small delay to ensure proper hydration
-    const timer = setTimeout(() => {
-      setShouldAnimate(true);
-    }, 100);
-    return () => clearTimeout(timer);
+    if (!containerRef.current || !scrollerRef.current) return;
+
+    const scrollerContent = Array.from(scrollerRef.current.children);
+    scrollerContent.forEach((item) => {
+      const duplicatedItem = item.cloneNode(true);
+      if (scrollerRef.current) {
+        scrollerRef.current.appendChild(duplicatedItem);
+      }
+    });
   }, []);
 
   return (
     <div
       ref={containerRef}
-      {...props}
-      className={cn(
-        "group relative flex w-full overflow-hidden",
-        className
-      )}
-      style={{ 
-        "--duration": `${speed}s`,
-        opacity: shouldAnimate ? 1 : 0,
-        transition: "opacity 0.5s ease-in"
-      } as any}
+      className={`scroller relative max-w-7xl overflow-hidden ${className}`}
     >
-      <div
-        className={cn(
-          "flex shrink-0 items-center gap-4",
-          shouldAnimate && {
-            "animate-marquee": !vertical,
-            "animate-marquee-vertical": vertical,
-            "group-hover:[animation-play-state:paused]": pauseOnHover,
-            "[animation-direction:reverse]": reverse,
-          }
-        )}
+      <motion.div
+        ref={scrollerRef}
+        className="flex min-w-full shrink-0 gap-4 py-4"
+        initial={{ x: 0 }}
+        animate={{ x: reverse ? '50%' : '-50%' }}
+        transition={{
+          duration: 100 / speed,
+          repeat: Infinity,
+          ease: 'linear',
+          ...(pauseOnHover && { pauseValues: { x: ['0%'] } })
+        }}
       >
         {children}
-      </div>
-      <div
-        aria-hidden="true"
-        className={cn(
-          "flex shrink-0 items-center gap-4",
-          shouldAnimate && {
-            "animate-marquee": !vertical,
-            "animate-marquee-vertical": vertical,
-            "group-hover:[animation-play-state:paused]": pauseOnHover,
-            "[animation-direction:reverse]": reverse,
-          }
-        )}
-      >
-        {children}
-      </div>
+      </motion.div>
     </div>
   );
-}
+};

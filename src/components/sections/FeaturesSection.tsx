@@ -54,17 +54,13 @@ const FeatureCard = ({ feature, index }: { feature: typeof features[0], index: n
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const { ref: cardRef, inView: isInView } = useInView({
     triggerOnce: false,
-    threshold: 0.5,
-    rootMargin: "100px"
+    threshold: 0.2,
+    rootMargin: "50% 0px -10% 0px"
   });
 
   useEffect(() => {
     setIsClient(true);
-    // Delay animation start slightly for a smoother entry
-    const timer = setTimeout(() => {
-      setShouldAnimate(true);
-    }, 100);
-    return () => clearTimeout(timer);
+    setShouldAnimate(true);
   }, []);
 
   // Base content that's consistent between server and client
@@ -86,12 +82,12 @@ const FeatureCard = ({ feature, index }: { feature: typeof features[0], index: n
       animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
       transition={{
         type: "spring",
-        stiffness: 80,
-        damping: 20,
-        duration: 0.8,
-        delay: index * 0.15
+        stiffness: 100,
+        damping: 15,
+        duration: 0.5,
+        delay: index * 0.1
       }}
-      className={`group relative rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm ${feature.hoverBg} transition-all duration-500 hover:scale-[1.02]`}
+      className={`group relative rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm ${feature.hoverBg} transition-all duration-300 hover:scale-[1.02]`}
     >
       {/* Icon */}
       <div className={`relative inline-flex p-3 rounded-xl ${feature.highlight} mb-6 transition duration-500 group-hover:scale-110 group-hover:shadow-lg ${feature.shadowColor}`}>
@@ -116,8 +112,8 @@ const FeatureCard = ({ feature, index }: { feature: typeof features[0], index: n
 
 const FeaturesSection = () => {
   const { ref: sectionRef, inView: isInView } = useInView({
-    rootMargin: "-100px",
-    threshold: 0.3
+    threshold: 0.2,
+    rootMargin: "50% 0px -10% 0px"
   });
 
   return (
@@ -146,9 +142,9 @@ const FeaturesSection = () => {
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{
             type: "spring",
-            stiffness: 80,
-            damping: 20,
-            duration: 0.8
+            stiffness: 100,
+            damping: 15,
+            duration: 0.5
           }}
           className="max-w-2xl mx-auto text-center mb-24"
         >
@@ -164,7 +160,7 @@ const FeaturesSection = () => {
         </motion.div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-6xl mx-auto">
           {features.map((feature, index) => (
             <FeatureCard key={index} feature={feature} index={index} />
           ))}

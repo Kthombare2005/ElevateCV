@@ -102,8 +102,8 @@ const TestimonialCard = ({ testimonial, index }: { testimonial: typeof testimoni
 const TestimonialsSection = () => {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { 
-    margin: "-100px",
-    amount: 0.3
+    margin: "50% 0px -10% 0px",
+    amount: 0.2
   });
 
   const containerVariants = {
@@ -111,37 +111,37 @@ const TestimonialsSection = () => {
     visible: {
       opacity: 1,
       transition: {
-        duration: 0.8,
-        staggerChildren: 0.15,
+        duration: 0.5,
+        staggerChildren: 0.1,
         when: "beforeChildren"
       }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 10 },
     visible: {
       opacity: 1,
       y: 0,
       transition: { 
         type: "spring",
-        stiffness: 80,
-        damping: 20,
-        duration: 0.8
+        stiffness: 100,
+        damping: 15,
+        duration: 0.5
       }
     }
   };
 
   const marqueeVariants = {
-    hidden: { opacity: 0, scale: 0.98 },
+    hidden: { opacity: 0, scale: 0.99 },
     visible: {
       opacity: 1,
       scale: 1,
       transition: { 
         type: "spring",
-        stiffness: 80,
-        damping: 20,
-        duration: 0.8
+        stiffness: 100,
+        damping: 15,
+        duration: 0.5
       }
     }
   };

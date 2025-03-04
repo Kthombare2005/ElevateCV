@@ -51,14 +51,14 @@ const StepCard = ({ step, index }: { step: typeof steps[0], index: number }) => 
   const cardRef = useRef(null);
   const isInView = useInView(cardRef, { 
     once: false,
-    amount: 0.5,
-    margin: "100px"
+    amount: 0.2,
+    margin: "50% 0px -10% 0px"
   });
 
   const cardVariants = {
     hidden: { 
       opacity: 0,
-      x: -30,
+      x: -20,
       y: 10
     },
     visible: {
@@ -67,17 +67,17 @@ const StepCard = ({ step, index }: { step: typeof steps[0], index: number }) => 
       y: 0,
       transition: {
         type: "spring",
-        stiffness: 80,
-        damping: 20,
-        duration: 0.8,
-        delay: index * 0.15
+        stiffness: 100,
+        damping: 15,
+        duration: 0.5,
+        delay: index * 0.1
       }
     }
   };
 
   const iconVariants = {
     hidden: { 
-      scale: 0.5,
+      scale: 0.8,
       opacity: 0
     },
     visible: {
@@ -86,9 +86,9 @@ const StepCard = ({ step, index }: { step: typeof steps[0], index: number }) => 
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 10,
-        duration: 0.5,
-        delay: index * 0.2 + 0.2
+        damping: 15,
+        duration: 0.4,
+        delay: index * 0.1
       }
     }
   };
@@ -96,14 +96,14 @@ const StepCard = ({ step, index }: { step: typeof steps[0], index: number }) => 
   const contentVariants = {
     hidden: { 
       opacity: 0,
-      x: -20
+      x: -10
     },
     visible: {
       opacity: 1,
       x: 0,
       transition: {
-        duration: 0.5,
-        delay: index * 0.2 + 0.3
+        duration: 0.4,
+        delay: index * 0.1
       }
     }
   };
@@ -114,6 +114,7 @@ const StepCard = ({ step, index }: { step: typeof steps[0], index: number }) => 
       variants={cardVariants}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
+      className="group relative"
     >
       <div className={`group relative rounded-2xl border border-white/10 ${step.bgColor} backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] p-6`}>
         {/* Content Container */}
@@ -178,8 +179,8 @@ const StepCard = ({ step, index }: { step: typeof steps[0], index: number }) => 
 const HowItWorksSection = () => {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { 
-    margin: "-100px",
-    amount: 0.3
+    margin: "50% 0px -10% 0px",
+    amount: 0.2
   });
 
   const containerVariants = {
@@ -187,9 +188,9 @@ const HowItWorksSection = () => {
     visible: {
       opacity: 1,
       transition: {
-        duration: 0.8,
-        delayChildren: 0.3,
-        staggerChildren: 0.4,
+        duration: 0.5,
+        delayChildren: 0.1,
+        staggerChildren: 0.1,
         when: "beforeChildren"
       }
     }
@@ -203,8 +204,8 @@ const HowItWorksSection = () => {
       transition: { 
         type: "spring",
         stiffness: 100,
-        damping: 10,
-        duration: 0.6
+        damping: 15,
+        duration: 0.5
       }
     }
   };
@@ -229,7 +230,7 @@ const HowItWorksSection = () => {
   };
 
   return (
-    <section ref={sectionRef} className="relative py-24 overflow-hidden">
+    <section ref={sectionRef} className="relative py-32 overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#4f46e5,transparent_70%)] opacity-70" />

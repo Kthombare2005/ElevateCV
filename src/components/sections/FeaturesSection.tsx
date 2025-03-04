@@ -2,8 +2,9 @@
 
 import { Brain, CheckCircle2, BarChart2, RefreshCw, Zap, Target } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
-import { motion, useAnimation, useInView } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { BoxReveal } from '../animations/BoxReveal';
+import { useInView } from 'react-intersection-observer';
 
 const features = [
   {
@@ -49,103 +50,86 @@ const features = [
 ];
 
 const FeatureCard = ({ feature, index }: { feature: typeof features[0], index: number }) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [opacity, setOpacity] = useState(0);
+  const [isClient, setIsClient] = useState(false);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const { ref: cardRef, inView: isInView } = useInView({
+    triggerOnce: false,
+    threshold: 0.5,
+    rootMargin: "100px"
+  });
 
   useEffect(() => {
-    setMounted(true);
+    setIsClient(true);
+    // Delay animation start slightly for a smoother entry
+    const timer = setTimeout(() => {
+      setShouldAnimate(true);
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current || !mounted) return;
-
-    const div = cardRef.current;
-    const rect = div.getBoundingClientRect();
-
-    setPosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
-
-  const handleMouseEnter = () => {
-    if (mounted) {
-      setOpacity(1);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (mounted) {
-      setOpacity(0);
-    }
-  };
+  // Base content that's consistent between server and client
+  const content = (
+    <div className="relative z-10">
+      <h3 className="text-xl font-semibold text-white mb-3 leading-relaxed group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/70 transition-all duration-500">
+        {feature.title}
+      </h3>
+      <p className="text-white/70 group-hover:text-white/90 transition-colors duration-500 leading-relaxed">
+        {feature.description}
+      </p>
+    </div>
+  );
 
   return (
     <motion.div
       ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: mounted ? 1 : 0, y: mounted ? 0 : 20 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      className={`group relative rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all duration-500 ${feature.hoverBg} hover:border-white/20 ${feature.shadowColor} hover:scale-[1.02]`}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+      transition={{
+        type: "spring",
+        stiffness: 80,
+        damping: 20,
+        duration: 0.8,
+        delay: index * 0.15
+      }}
+      className={`group relative rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm ${feature.hoverBg} transition-all duration-500 hover:scale-[1.02]`}
     >
-      <div
-        className="pointer-events-none absolute -inset-px opacity-0 transition duration-500"
-        style={{
-          opacity: mounted ? opacity : 0,
-          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(255,255,255,.1), transparent 40%)`,
-        }}
-      />
-
       {/* Icon */}
-      <div 
-        className={`relative inline-flex p-3 rounded-xl ${feature.highlight} mb-4 transition duration-500 group-hover:scale-110 group-hover:shadow-lg ${feature.shadowColor}`}
-      >
+      <div className={`relative inline-flex p-3 rounded-xl ${feature.highlight} mb-6 transition duration-500 group-hover:scale-110 group-hover:shadow-lg ${feature.shadowColor}`}>
         <feature.icon className={`h-6 w-6 ${feature.iconColor} transition-colors duration-500`} />
         <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 blur transition duration-500`} />
       </div>
 
-      {/* Text Content with BoxReveal */}
-      <BoxReveal width="100%" boxColor={feature.iconColor} duration={0.5}>
-        <div className="relative z-10">
-          <h3 className="text-xl font-semibold text-white mb-3 leading-relaxed group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/70 transition-all duration-500">
-            {feature.title}
-          </h3>
-          <p className="text-white/70 group-hover:text-white/90 transition-colors duration-500 leading-relaxed pb-1">
-            {feature.description}
-          </p>
-        </div>
-      </BoxReveal>
+      {/* Text Content */}
+      {isClient && shouldAnimate ? (
+        <BoxReveal width="100%" boxColor={feature.iconColor} duration={0.5}>
+          {content}
+        </BoxReveal>
+      ) : content}
 
       {/* Hover Indicator */}
       <div className="absolute right-6 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-        <CheckCircle2 className={`h-5 w-5 bg-clip-text text-transparent bg-gradient-to-br ${feature.gradient}`} />
+        <CheckCircle2 className={`h-5 w-5 ${feature.iconColor}`} />
       </div>
     </motion.div>
   );
 };
 
 const FeaturesSection = () => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, {
-    once: true,
-    margin: "-100px"
+  const { ref: sectionRef, inView: isInView } = useInView({
+    rootMargin: "-100px",
+    threshold: 0.3
   });
 
   return (
-    <section ref={ref} className="relative py-24 overflow-hidden bg-slate-950">
+    <section ref={sectionRef} className="relative py-32 overflow-hidden bg-slate-950">
       {/* Background Effects */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         {/* Extended gradients for smoother transitions */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,#3b82f6,transparent_70%)] opacity-60" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,#8b5cf6,transparent_70%)] opacity-60" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,#3b82f6,transparent_70%)] opacity-70" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,#8b5cf6,transparent_70%)] opacity-70" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#1e1b4b,transparent_100%)] opacity-30" />
         
-        {/* Grid pattern with increased opacity for better visibility */}
+        {/* Grid pattern */}
         <div 
           className="absolute inset-0 bg-[linear-gradient(to_right,#80808015_1px,transparent_1px),linear-gradient(to_bottom,#80808015_1px,transparent_1px)] bg-[size:24px_24px]"
           style={{
@@ -155,10 +139,20 @@ const FeaturesSection = () => {
         />
       </div>
 
-      <div className="container mx-auto px-4">
-        {/* Section Header - No BoxReveal */}
-        <div className="max-w-2xl mx-auto text-center mb-16">
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-4">
+      <div className="container mx-auto px-6">
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{
+            type: "spring",
+            stiffness: 80,
+            damping: 20,
+            duration: 0.8
+          }}
+          className="max-w-2xl mx-auto text-center mb-24"
+        >
+          <h2 className="text-4xl font-bold tracking-tight text-white mb-6">
             Why Choose{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-violet-500">
               ElevateCV
@@ -167,10 +161,10 @@ const FeaturesSection = () => {
           <p className="text-lg text-white/70">
             Our AI-powered platform provides comprehensive resume analysis and optimization to help you stand out in the job market.
           </p>
-        </div>
+        </motion.div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-6xl mx-auto">
           {features.map((feature, index) => (
             <FeatureCard key={index} feature={feature} index={index} />
           ))}

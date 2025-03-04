@@ -51,14 +51,15 @@ const StepCard = ({ step, index }: { step: typeof steps[0], index: number }) => 
   const cardRef = useRef(null);
   const isInView = useInView(cardRef, { 
     once: false,
-    amount: 0.3
+    amount: 0.5,
+    margin: "100px"
   });
 
   const cardVariants = {
     hidden: { 
       opacity: 0,
-      x: -50,
-      y: 20
+      x: -30,
+      y: 10
     },
     visible: {
       opacity: 1,
@@ -66,10 +67,10 @@ const StepCard = ({ step, index }: { step: typeof steps[0], index: number }) => 
       y: 0,
       transition: {
         type: "spring",
-        stiffness: 100,
-        damping: 15,
-        duration: 0.7,
-        delay: index * 0.2
+        stiffness: 80,
+        damping: 20,
+        duration: 0.8,
+        delay: index * 0.15
       }
     }
   };
@@ -187,7 +188,8 @@ const HowItWorksSection = () => {
       opacity: 1,
       transition: {
         duration: 0.8,
-        staggerChildren: 0.2,
+        delayChildren: 0.3,
+        staggerChildren: 0.4,
         when: "beforeChildren"
       }
     }
@@ -207,16 +209,40 @@ const HowItWorksSection = () => {
     }
   };
 
+  const cardVariants = {
+    hidden: { 
+      opacity: 0,
+      x: -50,
+      y: 20
+    },
+    visible: {
+      opacity: 1,
+      x: 0,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15,
+        duration: 0.7
+      }
+    }
+  };
+
   return (
-    <section ref={sectionRef} className="relative py-12 overflow-hidden">
+    <section ref={sectionRef} className="relative py-24 overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#4f46e5,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,#7c3aed,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#4f46e5,transparent_70%)] opacity-70" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,#7c3aed,transparent_70%)] opacity-70" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" 
+          style={{
+            maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)'
+          }}
+        />
       </div>
 
-      <div className="container mx-auto px-6 lg:px-8">
+      <div className="container mx-auto px-6">
         {/* Section Header */}
         <motion.div 
           variants={containerVariants}
@@ -249,7 +275,54 @@ const HowItWorksSection = () => {
           className="max-w-3xl mx-auto space-y-8"
         >
           {steps.map((step, index) => (
-            <StepCard key={index} step={step} index={index} />
+            <motion.div
+              key={index}
+              variants={cardVariants}
+              custom={index}
+              className="group relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] p-6"
+            >
+              {/* Content Container */}
+              <div className="flex items-start gap-6">
+                {/* Step Number with Background */}
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-900/50 ring-1 ring-white/10 transition-all duration-500 group-hover:ring-white/20">
+                  <div className={`text-2xl font-bold bg-gradient-to-r ${step.gradient} bg-clip-text text-transparent`}>
+                    {step.number}
+                  </div>
+                </div>
+
+                {/* Text Content */}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <step.icon className={`h-5 w-5 ${step.iconColor} transition-colors duration-500`} />
+                    <h3 className="text-xl font-semibold text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/70">
+                      {step.title}
+                    </h3>
+                  </div>
+                  <p className="text-base text-white/60 group-hover:text-white/80 transition-colors duration-500">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Connecting Line */}
+              {index < steps.length - 1 && (
+                <motion.div
+                  variants={{
+                    hidden: { height: 0 },
+                    visible: { 
+                      height: "100%",
+                      transition: {
+                        duration: 0.5,
+                        delay: 0.3
+                      }
+                    }
+                  }}
+                  className="absolute left-[2.2rem] top-24 bottom-[-2rem] w-[2px]"
+                >
+                  <div className="h-full w-full bg-gradient-to-b from-white/20 to-transparent" />
+                </motion.div>
+              )}
+            </motion.div>
           ))}
         </motion.div>
       </div>

@@ -103,7 +103,7 @@ const TestimonialsSection = () => {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { 
     margin: "-100px",
-    amount: 0.3 // Trigger when 30% of the section is visible
+    amount: 0.3
   });
 
   const containerVariants = {
@@ -112,62 +112,79 @@ const TestimonialsSection = () => {
       opacity: 1,
       transition: {
         duration: 0.8,
-        staggerChildren: 0.2,
+        staggerChildren: 0.15,
         when: "beforeChildren"
       }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
       transition: { 
         type: "spring",
-        stiffness: 100,
-        damping: 10,
-        duration: 0.6
+        stiffness: 80,
+        damping: 20,
+        duration: 0.8
       }
     }
   };
 
   const marqueeVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
+    hidden: { opacity: 0, scale: 0.98 },
     visible: {
       opacity: 1,
       scale: 1,
       transition: { 
         type: "spring",
-        stiffness: 100,
-        damping: 15,
+        stiffness: 80,
+        damping: 20,
         duration: 0.8
       }
     }
   };
 
   return (
-    <section ref={sectionRef} className="relative py-24 overflow-hidden bg-slate-950">
-      <div className="container mx-auto px-4">
+    <section ref={sectionRef} className="relative py-32 overflow-hidden bg-slate-950">
+      {/* Background Effects */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        {/* Extended gradients for smoother transitions */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,#3b82f6,transparent_70%)] opacity-70" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,#8b5cf6,transparent_70%)] opacity-70" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#1e1b4b,transparent_100%)] opacity-30" />
+        
+        {/* Grid pattern */}
+        <div 
+          className="absolute inset-0 bg-[linear-gradient(to_right,#80808015_1px,transparent_1px),linear-gradient(to_bottom,#80808015_1px,transparent_1px)] bg-[size:24px_24px]"
+          style={{
+            maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)'
+          }}
+        />
+      </div>
+
+      <div className="container mx-auto px-6">
         {/* Section Header */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
-          className="max-w-2xl mx-auto text-center mb-16"
+          className="max-w-2xl mx-auto text-center mb-24"
         >
           <motion.h2 
             variants={itemVariants}
-            className="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-4"
+            className="text-4xl font-bold tracking-tight text-white mb-6"
           >
             Trusted by{' '}
-            <span className="text-violet-500">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-violet-500">
               Professionals
             </span>
           </motion.h2>
           <motion.p 
             variants={itemVariants}
-            className="text-lg text-slate-400"
+            className="text-lg text-white/70"
           >
             See what our users say about their experience with ElevateCV
           </motion.p>

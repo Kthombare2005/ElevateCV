@@ -126,7 +126,7 @@ const InfiniteCarousel = ({ items }: { items: typeof testimonials }) => {
   useAnimationFrame((time, delta) => {
     if (hovering || !isVisible) return;
     
-    let moveBy = baseVelocity * (delta / 16);
+    const moveBy = baseVelocity * (delta / 16);
     
     if (scrollRef.current) {
       const containerWidth = scrollRef.current.scrollWidth / 2;

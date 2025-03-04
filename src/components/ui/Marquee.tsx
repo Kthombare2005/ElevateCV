@@ -2,7 +2,6 @@
 
 import { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from "@/lib/utils";
 import { ComponentPropsWithoutRef } from "react";
 
 interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {

@@ -3,7 +3,11 @@
 import Link from 'next/link';
 import { ArrowUpRight, ChevronRight } from 'lucide-react';
 
-const Navbar = () => {
+interface NavbarProps {
+  hideGetStarted?: boolean;
+}
+
+const Navbar = ({ hideGetStarted = false }: NavbarProps) => {
   return (
     <header className="absolute top-0 left-0 right-0 z-50">
       <nav className="mx-auto max-w-7xl px-6 lg:px-8" aria-label="Top">
@@ -27,15 +31,17 @@ const Navbar = () => {
             </div>
           </Link>
 
-          <Link
-            href="/get-started"
-            className="group relative inline-flex items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-blue-600 p-[2px] hover:text-white focus:outline-none focus:ring active:text-opacity-75"
-          >
-            <span className="relative flex items-center gap-1 rounded-full bg-white px-6 py-3 text-sm font-semibold text-purple-600 transition-colors hover:bg-transparent hover:text-white">
-              Get started
-              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </span>
-          </Link>
+          {!hideGetStarted && (
+            <Link
+              href="/get-started"
+              className="group relative inline-flex items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-blue-600 p-[2px] hover:text-white focus:outline-none focus:ring active:text-opacity-75"
+            >
+              <span className="relative flex items-center gap-1 rounded-full bg-white px-6 py-3 text-sm font-semibold text-purple-600 transition-colors hover:bg-transparent hover:text-white">
+                Get started
+                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </span>
+            </Link>
+          )}
         </div>
       </nav>
     </header>

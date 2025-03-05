@@ -3,6 +3,7 @@
 import { ArrowUpRight, Sparkles, Star, CheckCircle2, Play, BarChart2, Target, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { PulsatingButton } from '@/components/ui/pulsating-button';
 
 const HeroSection = () => {
   // Client-side only state to prevent hydration mismatch
@@ -131,30 +132,26 @@ const HeroSection = () => {
 
           {/* Enhanced CTA Section */}
           <div className="mt-10 flex items-center justify-center gap-6">
-            <Link
-              href="/upload"
-              className="group relative overflow-hidden rounded-full bg-gradient-to-r from-violet-600 to-blue-600 px-8 py-4 text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-violet-500/25"
-            >
-              {isClient && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-[120%] w-40 rotate-45 bg-white/20 translate-x-[-200%] group-hover:translate-x-[350%] transition-transform duration-700" />
-                </div>
-              )}
-              <span className="relative flex items-center gap-2 font-semibold">
-                <Sparkles className={`h-5 w-5 ${isClient ? 'animate-pulse' : ''}`} />
+            <Link href="/analyze">
+              <PulsatingButton
+                variant="primary"
+                size="lg"
+                icon={<Sparkles className="h-5 w-5" />}
+                pulseColor="#4461F2"
+                className="w-[200px]"
+              >
                 Analyze Your Resume
-              </span>
+              </PulsatingButton>
             </Link>
             
-            <Link
-              href="#how-it-works"
-              className="group relative overflow-hidden rounded-full bg-white/5 px-6 py-3 text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 flex items-center gap-2 font-medium border border-white/10 hover:border-white/20"
-            >
-              <Play className="h-4 w-4" />
-              See how it works
-              {isClient && (
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-600/5 to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
-              )}
+            <Link href="#how-it-works">
+              <button className="group relative overflow-hidden rounded-full bg-white/5 px-6 py-3 text-white hover:bg-white/10 transition-all duration-300 flex items-center gap-2 font-medium border border-white/10 hover:border-white/20">
+                <Play className="h-5 w-5" />
+                See how it works
+                {isClient && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-violet-600/5 to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+                )}
+              </button>
             </Link>
           </div>
 

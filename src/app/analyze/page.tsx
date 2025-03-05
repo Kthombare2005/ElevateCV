@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Upload, FileText, Sparkles, CheckCircle2, AlertCircle, X, Download, Maximize2, Minimize2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Upload, FileText, Sparkles, CheckCircle2, AlertCircle, X, Download, Maximize2, Minimize2, Briefcase, Building2, GraduationCap, Code2, FileText as FileTextIcon } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import { PulsatingButton } from '@/components/ui/pulsating-button';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
+import Base64 from "base64-js";
+import MarkdownIt from "markdown-it";
 
 // Dynamically import TypingAnimation with no SSR
 const TypingAnimation = dynamic(() => import('@/components/ui/typing-animation').then(mod => mod.TypingAnimation), {
@@ -27,6 +30,34 @@ const ALLOWED_FILE_TYPES = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx'
 };
 
+interface ResumeDetails {
+  jobTitle: string;
+  industry: string;
+  experienceLevel: string;
+  skills: string[];
+  jobDescription: string;
+}
+
+const EXPERIENCE_LEVELS = [
+  { value: 'fresher', label: 'Fresher' },
+  { value: '1-3', label: '1-3 years' },
+  { value: '4-6', label: '4-6 years' },
+  { value: '7+', label: '7+ years' },
+];
+
+const INDUSTRIES = [
+  'Technology',
+  'Finance',
+  'Healthcare',
+  'Marketing',
+  'Education',
+  'Manufacturing',
+  'Retail',
+  'Other'
+];
+
+const GEMINI_API_KEY = "AIzaSyB1El1CE7z3rS6yEAuDgWAzlfwZJWD4lTw";
+
 const AnalyzePage = () => {
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string>('');
@@ -37,6 +68,50 @@ const AnalyzePage = () => {
   const [fileType, setFileType] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [resumeDetails, setResumeDetails] = useState<ResumeDetails>({
+    jobTitle: '',
+    industry: '',
+    experienceLevel: '',
+    skills: [],
+    jobDescription: '',
+  });
+  const [currentSkill, setCurrentSkill] = useState('');
+  const [showDetailsForm, setShowDetailsForm] = useState(false);
+
+  // Reset form state
+  const resetFormState = () => {
+    setResumeDetails({
+      jobTitle: '',
+      industry: '',
+      experienceLevel: '',
+      skills: [],
+      jobDescription: '',
+    });
+    setCurrentSkill('');
+    setAnalysis(null);
+  };
+
+  // Handle file removal
+  const handleRemoveFile = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setFile(null);
+    setPreviewUrl(null);
+    setFileType(null);
+    setFileError('');
+    resetFormState(); // Reset form when file is removed
+  };
+
+  // Cleanup on page reload
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      resetFormState();
+    };
+  }, []);
 
   // Validate file type
   const validateFile = (file: File): boolean => {
@@ -92,50 +167,136 @@ const AnalyzePage = () => {
     }
   };
 
-  const handleRemoveFile = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setFile(null);
-    setPreviewUrl(null);
-    setFileType(null);
-    setFileError('');
-  };
-
   // Handle preview errors
   const handlePreviewError = (e: Error) => {
     console.error('Preview failed to load:', e);
     setPreviewUrl(null);
   };
 
+  const handleAddSkill = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && currentSkill.trim()) {
+      e.preventDefault();
+      setResumeDetails(prev => ({
+        ...prev,
+        skills: [...prev.skills, currentSkill.trim()]
+      }));
+      setCurrentSkill('');
+    }
+  };
+
+  const removeSkill = (skillToRemove: string) => {
+    setResumeDetails(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill !== skillToRemove)
+    }));
+  };
+
+  const analyzeResumeWithGemini = async (file: File) => {
+    try {
+      // Initialize Gemini API
+      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({
+        model: "gemini-1.5-pro",
+        safetySettings: [
+          {
+            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+          },
+        ],
+      });
+
+      // Convert file to base64
+      const buffer = await file.arrayBuffer();
+      const base64Data = Base64.fromByteArray(new Uint8Array(buffer));
+
+      // Prepare the prompt with explicit JSON formatting instructions
+      const prompt = `
+        You are a resume analysis expert. Analyze this resume and provide a detailed assessment in JSON format.
+        
+        Job Application Details:
+        - Job Title: ${resumeDetails.jobTitle}
+        - Industry: ${resumeDetails.industry}
+        - Experience Level: ${resumeDetails.experienceLevel}
+        - Key Skills to Highlight: ${resumeDetails.skills.join(', ')}
+        ${resumeDetails.jobDescription ? `- Job Description: ${resumeDetails.jobDescription}` : ''}
+
+        IMPORTANT: Your response must be a valid JSON object with the following structure:
+        {
+          "score": number (0-100),
+          "strengths": string[],
+          "improvements": string[],
+          "keywords": string[],
+          "recommendations": string[]
+        }
+
+        Do not include any text before or after the JSON object. The response should start with { and end with }.
+      `;
+
+      // Generate content with streaming
+      const result = await model.generateContentStream([
+        {
+          inlineData: {
+            mimeType: file.type,
+            data: base64Data
+          }
+        },
+        { text: prompt }
+      ]);
+
+      // Read from the stream and collect the response
+      let responseText = '';
+      for await (const chunk of result.stream) {
+        responseText += chunk.text();
+      }
+
+      try {
+        // Clean up the response text to ensure it's valid JSON
+        responseText = responseText.trim();
+        
+        // If the response doesn't start with {, try to find the JSON object
+        if (!responseText.startsWith('{')) {
+          const jsonStart = responseText.indexOf('{');
+          const jsonEnd = responseText.lastIndexOf('}') + 1;
+          if (jsonStart !== -1 && jsonEnd !== 0) {
+            responseText = responseText.slice(jsonStart, jsonEnd);
+          }
+        }
+
+        // Parse the JSON response
+        const analysis = JSON.parse(responseText);
+
+        // Validate the response structure
+        if (!analysis || typeof analysis.score !== 'number' || !Array.isArray(analysis.strengths) || 
+            !Array.isArray(analysis.improvements) || !Array.isArray(analysis.keywords) || 
+            !Array.isArray(analysis.recommendations)) {
+          throw new Error('Invalid analysis structure');
+        }
+
+        return analysis;
+      } catch (error) {
+        console.error('Error parsing Gemini response:', error);
+        console.error('Raw response:', responseText);
+        throw new Error('Failed to parse analysis results. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error analyzing resume:', error);
+      throw error;
+    }
+  };
+
   const handleAnalyze = async () => {
-    if (!file) return;
+    if (!file || !resumeDetails.jobTitle || !resumeDetails.industry || !resumeDetails.experienceLevel) return;
     
     setIsAnalyzing(true);
-    // TODO: Implement actual resume analysis logic
-    // This is a placeholder for the analysis result
-    setTimeout(() => {
-      setAnalysis({
-        score: 85,
-        strengths: [
-          "Strong technical skills",
-          "Clear work experience",
-          "Good education background"
-        ],
-        improvements: [
-          "Add more quantifiable achievements",
-          "Include relevant certifications",
-          "Optimize for ATS keywords"
-        ],
-        keywords: [
-          "JavaScript",
-          "React",
-          "Node.js",
-          "TypeScript"
-        ]
-      });
+    try {
+      const analysis = await analyzeResumeWithGemini(file);
+      setAnalysis(analysis);
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      // You might want to show an error message to the user here
+    } finally {
       setIsAnalyzing(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -351,10 +512,124 @@ const AnalyzePage = () => {
                   </motion.div>
                 </motion.div>
 
-                {/* Analyze Button with animation */}
+                {/* Resume Details Form */}
+                <AnimatePresence>
+                  {file && !analysis && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="bg-slate-900/50 rounded-xl p-6 mb-6 border border-slate-700"
+                    >
+                      <h3 className="text-xl font-semibold text-white mb-6">Additional Resume Details</h3>
+                      
+                      <div className="space-y-6">
+                        {/* Job Title */}
+                        <div className="space-y-2">
+                          <label className="flex items-center space-x-2 text-slate-300">
+                            <Briefcase className="h-5 w-5" />
+                            <span>Job Title or Role Applied For</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={resumeDetails.jobTitle}
+                            onChange={(e) => setResumeDetails(prev => ({ ...prev, jobTitle: e.target.value }))}
+                            placeholder="e.g., Software Engineer, Data Analyst"
+                            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        {/* Industry */}
+                        <div className="space-y-2">
+                          <label className="flex items-center space-x-2 text-slate-300">
+                            <Building2 className="h-5 w-5" />
+                            <span>Industry/Domain</span>
+                          </label>
+                          <select
+                            value={resumeDetails.industry}
+                            onChange={(e) => setResumeDetails(prev => ({ ...prev, industry: e.target.value }))}
+                            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="">Select Industry</option>
+                            {INDUSTRIES.map(industry => (
+                              <option key={industry} value={industry}>{industry}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Experience Level */}
+                        <div className="space-y-2">
+                          <label className="flex items-center space-x-2 text-slate-300">
+                            <GraduationCap className="h-5 w-5" />
+                            <span>Experience Level</span>
+                          </label>
+                          <select
+                            value={resumeDetails.experienceLevel}
+                            onChange={(e) => setResumeDetails(prev => ({ ...prev, experienceLevel: e.target.value }))}
+                            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="">Select Experience Level</option>
+                            {EXPERIENCE_LEVELS.map(level => (
+                              <option key={level.value} value={level.value}>{level.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Skills */}
+                        <div className="space-y-2">
+                          <label className="flex items-center space-x-2 text-slate-300">
+                            <Code2 className="h-5 w-5" />
+                            <span>Skills to Highlight</span>
+                          </label>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {resumeDetails.skills.map((skill, index) => (
+                              <span
+                                key={index}
+                                className="px-3 py-1 bg-blue-500/10 text-blue-400 rounded-full text-sm flex items-center space-x-1"
+                              >
+                                <span>{skill}</span>
+                                <button
+                                  onClick={() => removeSkill(skill)}
+                                  className="hover:text-blue-300"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                          <input
+                            type="text"
+                            value={currentSkill}
+                            onChange={(e) => setCurrentSkill(e.target.value)}
+                            onKeyDown={handleAddSkill}
+                            placeholder="Type a skill and press Enter"
+                            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        {/* Job Description */}
+                        <div className="space-y-2">
+                          <label className="flex items-center space-x-2 text-slate-300">
+                            <FileTextIcon className="h-5 w-5" />
+                            <span>Job Description (Optional)</span>
+                          </label>
+                          <textarea
+                            value={resumeDetails.jobDescription}
+                            onChange={(e) => setResumeDetails(prev => ({ ...prev, jobDescription: e.target.value }))}
+                            placeholder="Paste the job description here..."
+                            rows={4}
+                            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Analyze Button */}
                 <motion.button
                   onClick={handleAnalyze}
-                  disabled={isAnalyzing}
+                  disabled={isAnalyzing || !file || !resumeDetails.jobTitle || !resumeDetails.industry || !resumeDetails.experienceLevel}
                   className="w-full"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -363,7 +638,7 @@ const AnalyzePage = () => {
                   <PulsatingButton
                     variant="primary"
                     size="lg"
-                    disabled={isAnalyzing}
+                    disabled={isAnalyzing || !file || !resumeDetails.jobTitle || !resumeDetails.industry || !resumeDetails.experienceLevel}
                     icon={
                       isAnalyzing ? (
                         <Sparkles className="h-5 w-5 animate-spin" />

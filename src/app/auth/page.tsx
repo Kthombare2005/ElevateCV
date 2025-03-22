@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function AuthPage() {
   const router = useRouter();
-  const { login, signupWithGoogle } = useAuth();
+  const { signin, signinWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -23,7 +23,7 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await signin(email, password);
       router.push("/resume-analyzer");
     } catch (err: any) {
       console.error("Sign in error:", err);
@@ -42,7 +42,7 @@ export default function AuthPage() {
     setGoogleLoading(true);
     
     try {
-      await signupWithGoogle();
+      await signinWithGoogle();
       router.push("/resume-analyzer");
     } catch (err: any) {
       console.error("Google sign in error:", err);

@@ -9,6 +9,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
 import Base64 from "base64-js";
 import MarkdownIt from "markdown-it";
+import { Worker } from '@react-pdf-viewer/core';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
 // Dynamically import TypingAnimation with no SSR
 const TypingAnimation = dynamic(() => import('@/components/ui/typing-animation').then(mod => mod.TypingAnimation), {
@@ -22,6 +25,12 @@ const TypingAnimation = dynamic(() => import('@/components/ui/typing-animation')
 
 // Dynamically import FileViewer to avoid SSR issues
 const FileViewer = dynamic(() => import('react-file-viewer'), { ssr: false });
+
+// Dynamically import the PDF viewer
+const PDFViewer = dynamic(
+  () => import('@react-pdf-viewer/core').then(mod => mod.Viewer),
+  { ssr: false }
+);
 
 // Allowed file types and their MIME types
 const ALLOWED_FILE_TYPES = {
@@ -123,19 +132,32 @@ const AnalyzePage = () => {
     return true;
   };
 
+  // Function to check if file is PDF
+  const isPDF = (file: File) => file.type === 'application/pdf';
+
+  // Function to check if file is Word document
+  const isWordDoc = (file: File) => {
+    return file.type === 'application/msword' || 
+           file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  };
+
   // Handle file selection
   const handleFileSelection = (selectedFile: File) => {
     if (validateFile(selectedFile)) {
       setFile(selectedFile);
       setIsLoading(true);
-      const url = URL.createObjectURL(selectedFile);
-      setPreviewUrl(url);
       
-      // Set file type for the viewer
+      if (isPDF(selectedFile)) {
+        const url = URL.createObjectURL(selectedFile);
+        setPreviewUrl(url);
+      } else if (isWordDoc(selectedFile)) {
+        // For Word documents, we'll just show file info and download option
+        setPreviewUrl(null);
+      }
+      
       const extension = selectedFile.name.split('.').pop()?.toLowerCase() || '';
       setFileType(extension);
       
-      // Simulate loading time for preview
       setTimeout(() => setIsLoading(false), 1000);
     }
   };
@@ -171,6 +193,20 @@ const AnalyzePage = () => {
   const handlePreviewError = (e: Error) => {
     console.error('Preview failed to load:', e);
     setPreviewUrl(null);
+  };
+
+  // Function to download the file
+  const handleDownload = () => {
+    if (file) {
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
 
   const handleAddSkill = (e: React.KeyboardEvent) => {
@@ -482,31 +518,29 @@ const AnalyzePage = () => {
                       </div>
                     ) : previewUrl && fileType ? (
                       <div className={`w-full ${isFullscreen ? 'h-[calc(100vh-8rem)]' : 'h-[600px]'} bg-white transition-all duration-300`}>
-                        {fileType === 'pdf' ? (
-                          <iframe
-                            src={previewUrl}
-                            className="w-full h-full"
-                            title="Resume Preview"
-                          />
-                        ) : (
-                          <FileViewer
-                            fileType={fileType}
-                            filePath={previewUrl}
-                            onError={handlePreviewError}
-                            errorComponent={() => (
-                              <motion.div 
-                                className="flex flex-col items-center justify-center h-full bg-slate-100 text-slate-900"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
+                        {isPDF(file) ? (
+                          <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
+                            <PDFViewer fileUrl={previewUrl} />
+                          </Worker>
+                        ) : isWordDoc(file) ? (
+                          <div className="flex items-center justify-center h-full bg-gray-50">
+                            <div className="text-center">
+                              <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                              <p className="text-gray-600 mb-4">
+                                Preview not available for Word documents.
+                                <br />
+                                Please download the file to view its contents.
+                              </p>
+                              <button
+                                onClick={handleDownload}
+                                className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                               >
-                                <FileText className="h-16 w-16 text-slate-400 mb-4" />
-                                <p className="text-lg font-medium">Preview not available</p>
-                                <p className="text-sm text-slate-500">Please download the file to view it</p>
-                              </motion.div>
-                            )}
-                          />
-                        )}
+                                <Download className="w-4 h-4 mr-2" />
+                                Download Document
+                              </button>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </motion.div>

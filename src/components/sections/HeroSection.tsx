@@ -2,16 +2,27 @@
 
 import { ArrowUpRight, Sparkles, Star, CheckCircle2, Play, BarChart2, Target, Zap } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { PulsatingButton } from '@/components/ui/pulsating-button';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 const HeroSection = () => {
-  // Client-side only state to prevent hydration mismatch
+  const router = useRouter();
+  const { user } = useAuth();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const handleAnalyzeClick = () => {
+    if (user) {
+      router.push('/analyze');
+    } else {
+      router.push('/auth');
+    }
+  };
 
   return (
     <div className="relative min-h-[85vh] overflow-hidden pt-32 bg-slate-950">
@@ -132,7 +143,7 @@ const HeroSection = () => {
 
           {/* Enhanced CTA Section */}
           <div className="mt-10 flex items-center justify-center gap-6">
-            <Link href="/analyze">
+            <button onClick={handleAnalyzeClick}>
               <PulsatingButton
                 variant="primary"
                 size="lg"
@@ -142,7 +153,7 @@ const HeroSection = () => {
               >
                 Analyze Your Resume
               </PulsatingButton>
-            </Link>
+            </button>
             
             <Link href="#how-it-works">
               <button className="group relative overflow-hidden rounded-full bg-white/5 px-6 py-3 text-white hover:bg-white/10 transition-all duration-300 flex items-center gap-2 font-medium border border-white/10 hover:border-white/20">

@@ -19,6 +19,8 @@ const config: Config = {
         shimmer: "shimmer 2s linear infinite",
         spotlight: "spotlight 2s ease .75s 1 forwards",
         "meteor-effect": "meteor-effect 5s linear infinite",
+        'slideIn': 'slideIn 0.3s ease-out forwards',
+        'pulse': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
         meteor: {
@@ -46,6 +48,14 @@ const config: Config = {
             transform: "rotate(215deg) translateX(-500px)",
             opacity: "0",
           },
+        },
+        slideIn: {
+          '0%': { transform: 'translateY(-10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        pulse: {
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '0.2' },
         },
       },
     },

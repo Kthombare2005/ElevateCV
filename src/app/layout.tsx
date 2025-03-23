@@ -7,8 +7,8 @@ import { AuthProvider } from '@/lib/auth/AuthContext';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ElevateCV - AI-Powered Resume Analysis",
-  description: "Transform your resume with AI-powered insights and optimization",
+  title: "ElevateCV - AI Resume Analysis",
+  description: "Analyze and improve your resume with AI",
 };
 
 export default function RootLayout({
@@ -17,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} min-h-screen bg-gradient-to-b from-white to-purple-50/50 antialiased`}>
+    <html lang="en">
+      <body className={`${inter.className} bg-[#0A0A1F] min-h-screen text-white antialiased`}>
         <AuthProvider>
           <main>{children}</main>
         </AuthProvider>

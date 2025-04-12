@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import { Upload, FileText, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ATSAnalysisSection } from '@/components/sections/ATSAnalysisSection';
@@ -14,6 +16,8 @@ import { BackButton } from '@/components/magicui/BackButton';
 import { analyzeResume } from '@/lib/gemini-ai';
 
 export default function AnalyzePage() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [step, setStep] = useState<'upload' | 'preview' | 'form' | 'analysis'>('upload');
@@ -30,6 +34,21 @@ export default function AnalyzePage() {
     skills: '',
     industry: ''
   });
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in');
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  // Show loading state while auth is being checked
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];

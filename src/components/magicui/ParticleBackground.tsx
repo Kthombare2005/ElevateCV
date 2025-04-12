@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 
-export const ParticleBackground = () => {
+interface ParticleBackgroundProps {
+  className?: string;
+}
+
+export const ParticleBackground = ({ className = '' }: ParticleBackgroundProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
 
@@ -147,7 +151,7 @@ export const ParticleBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 -z-10 bg-transparent"
+      className={`fixed inset-0 -z-10 bg-transparent ${className}`}
     />
   );
 }; 

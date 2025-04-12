@@ -18,6 +18,9 @@ const config: Config = {
         'marquee-vertical': 'marquee-vertical var(--duration) linear infinite',
         'gradient': 'gradient 8s linear infinite',
         'shine': 'shine 1.5s linear infinite',
+        'spin-slow': 'spin 8s linear infinite',
+        'spin-slower': 'spin 15s linear infinite',
+        'pulse-slow': 'pulse 6s ease-in-out infinite',
       },
       keyframes: {
         marquee: {

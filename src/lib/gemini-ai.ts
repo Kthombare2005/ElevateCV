@@ -114,7 +114,9 @@ Provide a detailed analysis in JSON format with the following structure:
       }
     }
   }
-}`;
+}
+
+IMPORTANT: Respond ONLY with valid JSON. Do not include any additional text, explanations, or markdown formatting.`;
 
     try {
       // Generate analysis with streaming
@@ -139,71 +141,76 @@ Provide a detailed analysis in JSON format with the following structure:
         responseText += chunk.text();
       }
 
-      // Clean and parse the response
+      // Clean the response text
+      responseText = responseText.trim();
+      
+      // Remove any markdown code block indicators
+      responseText = responseText.replace(/```json\n?|\n?```/g, '');
+      
+      // Remove any leading/trailing whitespace and newlines
+      responseText = responseText.trim();
+
+      // Parse the JSON response
+      let analysis: AnalysisResponse;
       try {
-        // Find the first { and last } to extract valid JSON
-        const jsonStart = responseText.indexOf('{');
-        const jsonEnd = responseText.lastIndexOf('}') + 1;
-        if (jsonStart === -1 || jsonEnd === 0) {
-          throw new Error('Invalid JSON response format');
-        }
-        const jsonStr = responseText.slice(jsonStart, jsonEnd);
-        const analysis = JSON.parse(jsonStr) as AnalysisResponse;
+        analysis = JSON.parse(responseText) as AnalysisResponse;
+      } catch (parseError: unknown) {
+        console.error('Raw response:', responseText);
+        const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error';
+        throw new Error(`Failed to parse JSON response: ${errorMessage}`);
+      }
 
-        // Validate the response structure
-        if (!analysis || typeof analysis.score !== 'number' || !Array.isArray(analysis.suggestions)) {
-          throw new Error('Invalid response structure');
-        }
+      // Validate the response structure
+      if (!analysis || typeof analysis.score !== 'number' || !Array.isArray(analysis.suggestions)) {
+        throw new Error('Invalid response structure');
+      }
 
-        // Ensure all required fields exist with proper defaults
-        return {
-          score: Math.min(Math.max(0, Math.round(analysis.score)), 100),
-          suggestions: analysis.suggestions?.filter((s: string) => typeof s === 'string') || [],
-          missingKeywords: analysis.missingKeywords?.filter((k: string) => typeof k === 'string') || [],
-          jobTitle: formData.jobTitle,
-          detailedAnalysis: {
-            strengths: analysis.detailedAnalysis?.strengths || [],
-            weaknesses: analysis.detailedAnalysis?.weaknesses || [],
-            skillMatch: {
-              matching: analysis.detailedAnalysis?.skillMatch?.matching || [],
-              missing: analysis.detailedAnalysis?.skillMatch?.missing || [],
-              additional: analysis.detailedAnalysis?.skillMatch?.additional || []
+      // Ensure all required fields exist with proper defaults
+      return {
+        score: Math.min(Math.max(0, Math.round(analysis.score)), 100),
+        suggestions: analysis.suggestions?.filter((s: string) => typeof s === 'string') || [],
+        missingKeywords: analysis.missingKeywords?.filter((k: string) => typeof k === 'string') || [],
+        jobTitle: formData.jobTitle,
+        detailedAnalysis: {
+          strengths: analysis.detailedAnalysis?.strengths || [],
+          weaknesses: analysis.detailedAnalysis?.weaknesses || [],
+          skillMatch: {
+            matching: analysis.detailedAnalysis?.skillMatch?.matching || [],
+            missing: analysis.detailedAnalysis?.skillMatch?.missing || [],
+            additional: analysis.detailedAnalysis?.skillMatch?.additional || []
+          },
+          recommendations: {
+            immediate: analysis.detailedAnalysis?.recommendations?.immediate || [],
+            longTerm: analysis.detailedAnalysis?.recommendations?.longTerm || []
+          },
+          technicalSkillsAnalysis: {
+            frontend: {
+              skills: analysis.detailedAnalysis?.technicalSkillsAnalysis?.frontend?.skills || [],
+              proficiency: analysis.detailedAnalysis?.technicalSkillsAnalysis?.frontend?.proficiency || 0,
+              gaps: analysis.detailedAnalysis?.technicalSkillsAnalysis?.frontend?.gaps || []
             },
-            recommendations: {
-              immediate: analysis.detailedAnalysis?.recommendations?.immediate || [],
-              longTerm: analysis.detailedAnalysis?.recommendations?.longTerm || []
+            backend: {
+              skills: analysis.detailedAnalysis?.technicalSkillsAnalysis?.backend?.skills || [],
+              proficiency: analysis.detailedAnalysis?.technicalSkillsAnalysis?.backend?.proficiency || 0,
+              gaps: analysis.detailedAnalysis?.technicalSkillsAnalysis?.backend?.gaps || []
             },
-            technicalSkillsAnalysis: {
-              frontend: {
-                skills: analysis.detailedAnalysis?.technicalSkillsAnalysis?.frontend?.skills || [],
-                proficiency: analysis.detailedAnalysis?.technicalSkillsAnalysis?.frontend?.proficiency || 0,
-                gaps: analysis.detailedAnalysis?.technicalSkillsAnalysis?.frontend?.gaps || []
-              },
-              backend: {
-                skills: analysis.detailedAnalysis?.technicalSkillsAnalysis?.backend?.skills || [],
-                proficiency: analysis.detailedAnalysis?.technicalSkillsAnalysis?.backend?.proficiency || 0,
-                gaps: analysis.detailedAnalysis?.technicalSkillsAnalysis?.backend?.gaps || []
-              },
-              devops: {
-                skills: analysis.detailedAnalysis?.technicalSkillsAnalysis?.devops?.skills || [],
-                proficiency: analysis.detailedAnalysis?.technicalSkillsAnalysis?.devops?.proficiency || 0,
-                gaps: analysis.detailedAnalysis?.technicalSkillsAnalysis?.devops?.gaps || []
-              },
-              databases: {
-                skills: analysis.detailedAnalysis?.technicalSkillsAnalysis?.databases?.skills || [],
-                proficiency: analysis.detailedAnalysis?.technicalSkillsAnalysis?.databases?.proficiency || 0,
-                gaps: analysis.detailedAnalysis?.technicalSkillsAnalysis?.databases?.gaps || []
-              }
+            devops: {
+              skills: analysis.detailedAnalysis?.technicalSkillsAnalysis?.devops?.skills || [],
+              proficiency: analysis.detailedAnalysis?.technicalSkillsAnalysis?.devops?.proficiency || 0,
+              gaps: analysis.detailedAnalysis?.technicalSkillsAnalysis?.devops?.gaps || []
+            },
+            databases: {
+              skills: analysis.detailedAnalysis?.technicalSkillsAnalysis?.databases?.skills || [],
+              proficiency: analysis.detailedAnalysis?.technicalSkillsAnalysis?.databases?.proficiency || 0,
+              gaps: analysis.detailedAnalysis?.technicalSkillsAnalysis?.databases?.gaps || []
             }
           }
-        };
-      } catch (parseError) {
-        console.error('Error parsing AI response:', parseError);
-        throw new Error('Failed to parse AI response');
-      }
-    } catch (aiError) {
+        }
+      };
+    } catch (aiError: unknown) {
       console.error('AI generation error:', aiError);
-      throw new Error('Failed to generate analysis');
+      const errorMessage = aiError instanceof Error ? aiError.message : 'Unknown error';
+      throw new Error(`Failed to generate analysis: ${errorMessage}`);
     }
   } catch (error) {
     console.error('Resume analysis error:', error);

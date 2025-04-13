@@ -2,15 +2,15 @@
 
 import { cn } from "@/lib/utils";
 import { ButtonHTMLAttributes, forwardRef } from "react";
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 import { Sparkles } from "lucide-react";
 
-interface MagicButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+type MagicButtonProps = Omit<HTMLMotionProps<"button">, "children"> & {
   variant?: 'primary' | 'secondary' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
   children: React.ReactNode;
-}
+};
 
 const MagicButton = forwardRef<HTMLButtonElement, MagicButtonProps>(
   ({ className, variant = 'primary', size = 'md', icon, children, ...props }, ref) => {

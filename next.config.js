@@ -11,6 +11,8 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
+  // Add output configuration for Vercel
+  output: 'standalone',
 };
 
 module.exports = nextConfig;

@@ -47,10 +47,12 @@ export const ParticleBackground = ({ className = '' }: ParticleBackgroundProps) 
       oscillationRadius: number;
       originalX: number;
       originalY: number;
+      private canvas: HTMLCanvasElement;
 
-      constructor() {
-        this.originalX = Math.random() * canvas.width;
-        this.originalY = Math.random() * canvas.height;
+      constructor(canvas: HTMLCanvasElement) {
+        this.canvas = canvas;
+        this.originalX = Math.random() * this.canvas.width;
+        this.originalY = Math.random() * this.canvas.height;
         this.x = this.originalX;
         this.y = this.originalY;
         this.baseSize = Math.random() * 2 + 1;
@@ -83,10 +85,10 @@ export const ParticleBackground = ({ className = '' }: ParticleBackgroundProps) 
         }
 
         // Keep particles within bounds
-        if (this.x > canvas.width) this.x = 0;
-        if (this.x < 0) this.x = canvas.width;
-        if (this.y > canvas.height) this.y = 0;
-        if (this.y < 0) this.y = canvas.height;
+        if (this.x > this.canvas.width) this.x = 0;
+        if (this.x < 0) this.x = this.canvas.width;
+        if (this.y > this.canvas.height) this.y = 0;
+        if (this.y < 0) this.y = this.canvas.height;
       }
 
       draw() {
@@ -102,7 +104,7 @@ export const ParticleBackground = ({ className = '' }: ParticleBackgroundProps) 
     const particles: Particle[] = [];
     const particleCount = 100; // Increased count
     for (let i = 0; i < particleCount; i++) {
-      particles.push(new Particle());
+      particles.push(new Particle(canvas));
     }
 
     // Animation loop

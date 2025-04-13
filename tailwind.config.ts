@@ -46,9 +46,9 @@ const config: Config = {
       },
       borderRadius: {
         lg: 'var(--radius)',
-        md: 'var(--radius-md)',
-        sm: 'var(--radius-sm)',
-        xl: 'var(--radius-xl)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+        xl: 'calc(var(--radius) + 4px)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

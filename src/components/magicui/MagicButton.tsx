@@ -9,6 +9,7 @@ interface MagicButtonProps {
   type?: 'button' | 'submit';
   className?: string;
   fullWidth?: boolean;
+  disabled?: boolean;
 }
 
 export const MagicButton = ({ 
@@ -16,14 +17,16 @@ export const MagicButton = ({
   onClick, 
   type = 'button',
   className = '',
-  fullWidth = false
+  fullWidth = false,
+  disabled = false
 }: MagicButtonProps) => {
   return (
     <motion.button
       type={type}
       onClick={onClick}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      disabled={disabled}
+      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
       className={`
         relative group
         inline-flex items-center justify-center
@@ -34,6 +37,7 @@ export const MagicButton = ({
         transition-all duration-300
         hover:from-blue-700 hover:to-blue-800
         ${fullWidth ? 'w-full' : ''}
+        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
       `}
     >

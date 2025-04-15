@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload, FileText, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -14,54 +13,36 @@ import { ParticleBackground } from '@/components/magicui/ParticleBackground';
 import { FloatingElement } from '@/components/magicui/FloatingElement';
 import { BackButton } from '@/components/magicui/BackButton';
 import { analyzeResume } from '@/lib/gemini-ai';
+import { saveResumeToStorage, saveUserData } from '@/lib/user-data';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, doc, setDoc, serverTimestamp, addDoc } from 'firebase/firestore';
+import { storage, db } from '@/lib/firebase';
+import { AnalysisResponse } from '@/lib/types';
+import { getFirestore } from 'firebase/firestore';
 
 export default function AnalyzePage() {
-  const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [step, setStep] = useState<'upload' | 'preview' | 'form' | 'analysis'>('upload');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<{
-    score: number;
-    suggestions: string[];
-    missingKeywords: string[];
-    jobTitle: string;
-  } | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
   const [formData, setFormData] = useState({
     jobTitle: '',
     experience: '',
     skills: '',
     industry: ''
   });
-
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/sign-in');
-    }
-  }, [isLoaded, isSignedIn, router]);
-
-  // Show loading state while auth is being checked
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-      </div>
-    );
-  }
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
     if (uploadedFile && (uploadedFile.type === 'application/pdf' || uploadedFile.type === 'application/msword' || uploadedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
       setFile(uploadedFile);
-      // Create preview URL only for PDFs
-      if (uploadedFile.type === 'application/pdf') {
-        const fileUrl = URL.createObjectURL(uploadedFile);
-        setPreview(fileUrl);
-      } else {
-        setPreview(null);
-      }
+      setPreview(URL.createObjectURL(uploadedFile));
       setStep('preview');
+    } else {
+      setError('Please upload a PDF or Word document');
     }
   };
 
@@ -71,12 +52,52 @@ export default function AnalyzePage() {
 
     try {
       setIsAnalyzing(true);
-      const result = await analyzeResume(file, formData);
-      setAnalysisResult(result);
+      setError(null);
+
+      // First, upload the file to Firestore
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload resume');
+      }
+
+      const { documentId, content } = await uploadResponse.json();
+
+      // Prepare job details for analysis
+      const jobDetails = {
+        jobTitle: formData.jobTitle,
+        experience: formData.experience,
+        skills: formData.skills,
+        industry: formData.industry
+      };
+
+      // Then analyze the resume using the base64 content
+      const analysisResponse = await analyzeResume(content, jobDetails);
+      
+      // Set the analysis result
+      setAnalysisResult(analysisResponse);
+      
+      // Save the analysis to Firestore
+      const db = getFirestore();
+      const analysesCollection = collection(db, 'analyses');
+      await addDoc(analysesCollection, {
+        resumeId: documentId,
+        analysis: analysisResponse,
+        createdAt: new Date().toISOString(),
+      });
+
+      // Move to the analysis step
       setStep('analysis');
-    } catch (error) {
-      console.error('Error analyzing resume:', error);
-      // You might want to show an error message to the user here
+
+    } catch (err) {
+      console.error('Analysis error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to analyze resume');
     } finally {
       setIsAnalyzing(false);
     }
@@ -327,7 +348,11 @@ export default function AnalyzePage() {
           )}
 
           {step === 'analysis' && analysisResult && (
-            <ATSAnalysisSection {...analysisResult} disableHover />
+            <ATSAnalysisSection 
+              {...analysisResult} 
+              jobTitle={formData.jobTitle}
+              disableHover 
+            />
           )}
         </motion.div>
       </div>

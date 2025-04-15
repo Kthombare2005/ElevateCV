@@ -63,6 +63,10 @@ const config: Config = {
         'spin-slow': 'spin 8s linear infinite',
         'spin-slower': 'spin 15s linear infinite',
         'pulse-slow': 'pulse 6s ease-in-out infinite',
+        'slow-spin': 'slow-spin 25s linear infinite',
+        'slow-spin-reverse': 'slow-spin-reverse 30s linear infinite',
+        'float': 'float 6s ease-in-out infinite',
+        'float-delayed': 'float 6s ease-in-out infinite 2s',
       },
       keyframes: {
         marquee: {
@@ -87,6 +91,24 @@ const config: Config = {
           '0%': { transform: 'translateX(-100%) skewX(-15deg)' },
           '100%': { transform: 'translateX(200%) skewX(-15deg)' },
         },
+        'slow-spin': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+        'slow-spin-reverse': {
+          '0%': { transform: 'rotate(360deg)' },
+          '100%': { transform: 'rotate(0deg)' },
+        },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+      },
+      backdropBlur: {
+        'xl': '24px',
+      },
+      borderColor: {
+        DEFAULT: 'rgb(255 255 255 / 0.1)',
       },
     },
   },

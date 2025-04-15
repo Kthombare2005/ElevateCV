@@ -31,17 +31,15 @@ const Navbar = ({ hideGetStarted = false }: NavbarProps) => {
             </div>
           </Link>
 
-          {!hideGetStarted && (
+          <div className="flex items-center space-x-4">
             <Link
-              href="/get-started"
-              className="group relative inline-flex items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-blue-600 p-[2px] hover:text-white focus:outline-none focus:ring active:text-opacity-75"
+              href="/analyze"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
             >
-              <span className="relative flex items-center gap-1 rounded-full bg-white px-6 py-3 text-sm font-semibold text-purple-600 transition-colors hover:bg-transparent hover:text-white">
-                Get started
-                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </span>
+              Analyze Resume
+              <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
-          )}
+          </div>
         </div>
       </nav>
     </header>

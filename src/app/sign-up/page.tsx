@@ -2,50 +2,126 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { createUser } from '@/lib/firebase';
 
 export default function SignUpPage() {
   const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [phoneError, setPhoneError] = useState('');
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [errors, setErrors] = useState({
+    email: '',
+    phoneNumber: '',
+    password: '',
+    general: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-    if (value.length <= 10) {
-      setPhoneNumber(value);
-      setPhoneError(value.length === 10 ? '' : 'Phone number must be 10 digits');
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear errors when user types
+    if (errors[name as keyof typeof errors]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
+    // Validate phone number
+    if (name === 'phoneNumber') {
+      const numericValue = value.replace(/\D/g, '');
+      if (numericValue.length <= 10) {
+        setFormData(prev => ({ ...prev, phoneNumber: numericValue }));
+        setErrors(prev => ({
+          ...prev,
+          phoneNumber: numericValue.length === 10 ? '' : 'Phone number must be 10 digits'
+        }));
+      }
+    }
+
+    // Validate email
+    if (name === 'email') {
+      setErrors(prev => ({
+        ...prev,
+        email: value.includes('@') ? '' : 'Email must contain @'
+      }));
+    }
+
+    // Validate password match
+    if (name === 'password' || name === 'confirmPassword') {
+      if (name === 'confirmPassword' && value !== formData.password) {
+        setErrors(prev => ({ ...prev, password: 'Passwords do not match' }));
+      } else if (name === 'password' && value !== formData.confirmPassword && formData.confirmPassword) {
+        setErrors(prev => ({ ...prev, password: 'Passwords do not match' }));
+      } else {
+        setErrors(prev => ({ ...prev, password: '' }));
+      }
     }
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEmail(value);
-    setEmailError(value.includes('@') ? '' : 'Email must contain @');
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.includes('@')) {
-      setEmailError('Email must contain @');
+    setIsLoading(true);
+    setErrors({ email: '', phoneNumber: '', password: '', general: '' });
+
+    // Validate form
+    if (!formData.email.includes('@')) {
+      setErrors(prev => ({ ...prev, email: 'Email must contain @' }));
+      setIsLoading(false);
       return;
     }
-    if (phoneNumber.length !== 10) {
-      setPhoneError('Phone number must be 10 digits');
+
+    if (formData.phoneNumber.length !== 10) {
+      setErrors(prev => ({ ...prev, phoneNumber: 'Phone number must be 10 digits' }));
+      setIsLoading(false);
       return;
     }
-    // Add your form submission logic here
+
+    if (formData.password !== formData.confirmPassword) {
+      setErrors(prev => ({ ...prev, password: 'Passwords do not match' }));
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setErrors(prev => ({ ...prev, password: 'Password must be at least 6 characters' }));
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const result = await createUser(formData.email, formData.password, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+      });
+
+      if (result.success) {
+        router.push('/sign-in?message=Account created successfully! Please sign in.');
+      } else {
+        setErrors(prev => ({ ...prev, general: result.error }));
+      }
+    } catch (error: any) {
+      setErrors(prev => ({ ...prev, general: error.message || 'An error occurred during sign up' }));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!mounted) {
-    return null; // or a loading spinner
+    return null;
   }
 
   return (
@@ -83,6 +159,12 @@ export default function SignUpPage() {
             <p className="text-gray-400">Get started with your free account</p>
           </div>
           
+          {errors.general && (
+            <div className="mb-4 p-3 rounded-md bg-red-500/10 border border-red-500/50 text-red-500 text-sm">
+              {errors.general}
+            </div>
+          )}
+          
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -93,6 +175,8 @@ export default function SignUpPage() {
                   type="text"
                   id="firstName"
                   name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
                   className="mt-1 block w-full rounded-md border border-white/10 bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50"
                   placeholder="John"
                   required
@@ -107,6 +191,8 @@ export default function SignUpPage() {
                   type="text"
                   id="lastName"
                   name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
                   className="mt-1 block w-full rounded-md border border-white/10 bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50"
                   placeholder="Doe"
                   required
@@ -122,17 +208,17 @@ export default function SignUpPage() {
                 type="email"
                 id="email"
                 name="email"
-                value={email}
-                onChange={handleEmailChange}
-                className={`mt-1 block w-full rounded-md border ${emailError ? 'border-red-500' : 'border-white/10'} bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50`}
+                value={formData.email}
+                onChange={handleChange}
+                className={`mt-1 block w-full rounded-md border ${errors.email ? 'border-red-500' : 'border-white/10'} bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50`}
                 placeholder="john.doe@example.com"
                 required
               />
-              {emailError && <p className="mt-1 text-sm text-red-500">{emailError}</p>}
+              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
             </div>
 
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-300">
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-300">
                 Phone Number
               </label>
               <div className="mt-1 flex rounded-md shadow-sm">
@@ -141,16 +227,16 @@ export default function SignUpPage() {
                 </span>
                 <input
                   type="text"
-                  id="phone"
-                  name="phone"
-                  value={phoneNumber}
-                  onChange={handlePhoneChange}
-                  className={`block w-full rounded-none rounded-r-md border ${phoneError ? 'border-red-500' : 'border-white/10'} bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50`}
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  className={`block w-full rounded-none rounded-r-md border ${errors.phoneNumber ? 'border-red-500' : 'border-white/10'} bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50`}
                   placeholder="1234567890"
                   required
                 />
               </div>
-              {phoneError && <p className="mt-1 text-sm text-red-500">{phoneError}</p>}
+              {errors.phoneNumber && <p className="mt-1 text-sm text-red-500">{errors.phoneNumber}</p>}
             </div>
 
             <div>
@@ -162,7 +248,9 @@ export default function SignUpPage() {
                   type={showPassword ? "text" : "password"}
                   id="password"
                   name="password"
-                  className="block w-full rounded-md border border-white/10 bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50 pr-10"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`block w-full rounded-md border ${errors.password ? 'border-red-500' : 'border-white/10'} bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50 pr-10`}
                   placeholder="Create a password"
                   required
                 />
@@ -194,7 +282,9 @@ export default function SignUpPage() {
                   type={showConfirmPassword ? "text" : "password"}
                   id="confirmPassword"
                   name="confirmPassword"
-                  className="block w-full rounded-md border border-white/10 bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50 pr-10"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`block w-full rounded-md border ${errors.password ? 'border-red-500' : 'border-white/10'} bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50 pr-10`}
                   placeholder="Confirm your password"
                   required
                 />
@@ -215,6 +305,7 @@ export default function SignUpPage() {
                   )}
                 </button>
               </div>
+              {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
             </div>
 
             <div className="flex items-start">
@@ -251,9 +342,10 @@ export default function SignUpPage() {
 
             <button
               type="submit"
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#131620] transition-all duration-300"
+              disabled={isLoading}
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#131620] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Account
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 

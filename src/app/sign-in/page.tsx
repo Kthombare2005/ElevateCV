@@ -1,36 +1,75 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { signIn } from '@/lib/firebase';
 
 export default function SignInPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState('');
+  const searchParams = useSearchParams();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [errors, setErrors] = useState({
+    email: '',
+    password: '',
+    general: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEmail(value);
-    setEmailError(value.includes('@') ? '' : 'Email must contain @');
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear errors when user types
+    if (errors[name as keyof typeof errors]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
+    // Validate email
+    if (name === 'email') {
+      setErrors(prev => ({
+        ...prev,
+        email: value.includes('@') ? '' : 'Email must contain @'
+      }));
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.includes('@')) {
-      setEmailError('Email must contain @');
+    setIsLoading(true);
+    setErrors({ email: '', password: '', general: '' });
+
+    // Validate form
+    if (!formData.email.includes('@')) {
+      setErrors(prev => ({ ...prev, email: 'Email must contain @' }));
+      setIsLoading(false);
       return;
     }
-    // Add your form submission logic here
+
+    try {
+      const result = await signIn(formData.email, formData.password);
+      if (result.success) {
+        router.push('/dashboard'); // Redirect to dashboard after successful login
+      } else {
+        setErrors(prev => ({ ...prev, general: result.error }));
+      }
+    } catch (error: any) {
+      setErrors(prev => ({ ...prev, general: error.message || 'An error occurred during sign in' }));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!mounted) {
-    return null; // or a loading spinner
+    return null;
   }
 
   return (
@@ -68,6 +107,18 @@ export default function SignInPage() {
             <p className="text-gray-400">Please enter your details</p>
           </div>
           
+          {searchParams.get('message') && (
+            <div className="mb-4 p-3 rounded-md bg-green-500/10 border border-green-500/50 text-green-500 text-sm">
+              {searchParams.get('message')}
+            </div>
+          )}
+
+          {errors.general && (
+            <div className="mb-4 p-3 rounded-md bg-red-500/10 border border-red-500/50 text-red-500 text-sm">
+              {errors.general}
+            </div>
+          )}
+          
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300">
@@ -77,13 +128,13 @@ export default function SignInPage() {
                 type="email"
                 id="email"
                 name="email"
-                value={email}
-                onChange={handleEmailChange}
-                className={`mt-1 block w-full rounded-md border ${emailError ? 'border-red-500' : 'border-white/10'} bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50`}
+                value={formData.email}
+                onChange={handleChange}
+                className={`mt-1 block w-full rounded-md border ${errors.email ? 'border-red-500' : 'border-white/10'} bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50`}
                 placeholder="Enter your email"
                 required
               />
-              {emailError && <p className="mt-1 text-sm text-red-500">{emailError}</p>}
+              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
             </div>
 
             <div>
@@ -95,7 +146,9 @@ export default function SignInPage() {
                   type={showPassword ? "text" : "password"}
                   id="password"
                   name="password"
-                  className="block w-full rounded-md border border-white/10 bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50 pr-10"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`block w-full rounded-md border ${errors.password ? 'border-red-500' : 'border-white/10'} bg-[#1c1f2e] px-3 py-2 text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-white/50 pr-10`}
                   placeholder="Enter your password"
                   required
                 />
@@ -116,6 +169,7 @@ export default function SignInPage() {
                   )}
                 </button>
               </div>
+              {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
             </div>
 
             <div className="flex items-center justify-between">
@@ -142,9 +196,10 @@ export default function SignInPage() {
 
             <button
               type="submit"
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#131620] transition-all duration-300"
+              disabled={isLoading}
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#131620] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign in
+              {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
 

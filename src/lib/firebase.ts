@@ -1,31 +1,66 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { getAuth } from 'firebase/auth';
-import { getAnalytics, isSupported } from 'firebase/analytics';
+import { initializeApp, getApps } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDY9izp2ilKNe4mtMz6tZY2Txs3dcw1SnA",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "elevatecv-42abf.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "elevatecv-42abf",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "elevatecv-42abf.firebasestorage.app",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "24955256485",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:24955256485:web:f5306750ec83a9e02dd74c",
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-390RKC4ZF1"
+  apiKey: "AIzaSyDY9izp2ilKNe4mtMz6tZY2Txs3dcw1SnA",
+  authDomain: "elevatecv-42abf.firebaseapp.com",
+  projectId: "elevatecv-42abf",
+  storageBucket: "elevatecv-42abf.firebasestorage.app",
+  messagingSenderId: "24955256485",
+  appId: "1:24955256485:web:f5306750ec83a9e02dd74c",
+  measurementId: "G-390RKC4ZF1"
 };
 
 // Initialize Firebase
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
-
-// Initialize Analytics conditionally (only in browser environment)
-let analytics = null;
+const db = getFirestore(app);
+let analytics;
 if (typeof window !== 'undefined') {
-  // Check if analytics is supported in the current environment
-  isSupported().then(yes => yes && (analytics = getAnalytics(app)));
+  analytics = getAnalytics(app);
 }
 
-export { app, db, storage, auth, analytics }; 
+export interface UserData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  createdAt: Date;
+}
+
+export const createUser = async (email: string, password: string, userData: Omit<UserData, 'createdAt'>) => {
+  try {
+    // Create the user with email and password
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Save additional user data to Firestore
+    await setDoc(doc(db, 'users', user.uid), {
+      ...userData,
+      createdAt: new Date(),
+    });
+
+    return { success: true, user };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message || 'Failed to create user'
+    };
+  }
+};
+
+export const signIn = async (email: string, password: string) => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return { success: true, user: userCredential.user };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message || 'Failed to sign in'
+    };
+  }
+};
+
+export { auth, db }; 

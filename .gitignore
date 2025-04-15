@@ -27,6 +27,9 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env.development
+.env.test
+.env.production
 
 # vercel
 .vercel
@@ -37,3 +40,17 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Firebase service account keys
+*-service-account.json
+firebase-service-account.json
+service-account.json
+firebase-adminsdk-*.json
+
+# Other sensitive files
+*.key
+*.pem
+*.cert
+*.crt
+*.p12
+*.pfx

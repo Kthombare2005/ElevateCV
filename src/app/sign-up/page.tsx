@@ -111,7 +111,25 @@ export default function SignUpPage() {
       if (result.success) {
         router.push('/sign-in?message=Account created successfully! Please sign in.');
       } else {
-        setErrors(prev => ({ ...prev, general: result.error }));
+        if (result.error.includes('already exists')) {
+          setErrors(prev => ({
+            ...prev,
+            general: (
+              <div className="flex flex-col space-y-2">
+                <span>{result.error}</span>
+                <button
+                  type="button"
+                  onClick={() => router.push('/sign-in')}
+                  className="text-blue-500 hover:text-blue-400 underline text-sm"
+                >
+                  Click here to sign in
+                </button>
+              </div>
+            ) as unknown as string
+          }));
+        } else {
+          setErrors(prev => ({ ...prev, general: result.error }));
+        }
       }
     } catch (error: any) {
       setErrors(prev => ({ ...prev, general: error.message || 'An error occurred during sign up' }));

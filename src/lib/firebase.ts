@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, fetchSignInMethodsForEmail } from "firebase/auth";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -30,8 +30,27 @@ export interface UserData {
   createdAt: Date;
 }
 
+export const checkEmailExists = async (email: string) => {
+  try {
+    const methods = await fetchSignInMethodsForEmail(auth, email);
+    return methods.length > 0;
+  } catch (error: any) {
+    console.error('Error checking email:', error);
+    throw error;
+  }
+};
+
 export const createUser = async (email: string, password: string, userData: Omit<UserData, 'createdAt'>) => {
   try {
+    // Check if email already exists
+    const emailExists = await checkEmailExists(email);
+    if (emailExists) {
+      return {
+        success: false,
+        error: 'An account with this email already exists. Please sign in.'
+      };
+    }
+
     // Create the user with email and password
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
